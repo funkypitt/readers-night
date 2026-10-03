@@ -66,6 +66,20 @@ object Filter {
         changed(context)
     }
 
+    /** The next dimming in the cycle off → light → medium → strong → off. */
+    fun nextDim(dim: Int): Int = when {
+        dim <= 0 -> DIM_LIGHT
+        dim <= DIM_LIGHT -> DIM_MEDIUM
+        dim <= DIM_MEDIUM -> DIM_STRONG
+        else -> 0
+    }
+
+    /** The dimming moved one step; shown at once while the filter is on. */
+    fun cycleDim(context: Context) {
+        val o = options(context)
+        setOptions(context, o.copy(dim = nextDim(o.dim)))
+    }
+
     /** False when the permission is missing: the caller sends the user to the app. */
     fun toggle(context: Context): Boolean {
         if (!allowed(context)) return false

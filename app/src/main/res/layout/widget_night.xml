@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Left, the state in words; a tap there opens the app. Right, the switch, and under it
+     the dimming, which a tap moves one step. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -27,23 +29,45 @@
             android:id="@+id/widget_sub"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:fontFamily="sans-serif-light"
             android:textSize="14sp"
-            android:maxLines="1"
+            android:maxLines="2"
             android:ellipsize="end" />
     </LinearLayout>
-    <TextView
-        android:id="@+id/widget_switch"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
-        android:minWidth="64dp"
-        android:includeFontPadding="false"
-        android:gravity="center"
-        android:fontFamily="sans-serif-light"
-        android:textSize="22sp"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="8dp" />
+        android:orientation="vertical"
+        android:gravity="end">
+        <TextView
+            android:id="@+id/widget_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="64dp"
+            android:includeFontPadding="false"
+            android:gravity="center"
+            android:fontFamily="sans-serif-light"
+            android:textSize="22sp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="8dp" />
+        <TextView
+            android:id="@+id/widget_dim"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minWidth="64dp"
+            android:includeFontPadding="false"
+            android:gravity="center"
+            android:fontFamily="sans-serif-light"
+            android:textSize="15sp"
+            android:maxLines="1"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="7dp" />
+    </LinearLayout>
 </LinearLayout>

@@ -27,7 +27,7 @@
     <string name="add_tile">zu den Schnelleinstellungen hinzufügen</string>
     <string name="add_tile_hint">die Schalter, die man vom oberen Bildschirmrand herunterzieht</string>
     <string name="add_tile_manual">Um den Schalter zu den Schnelleinstellungen hinzuzufügen: zweimal vom oberen Bildschirmrand nach unten wischen, den Stift antippen und „Nachtfilter“ zu den Schaltern ziehen.</string>
-    <string name="widget_desc">der Nachtfilter, an oder aus</string>
+    <string name="widget_desc">der Nachtfilter: sein Schalter und seine Abdunkelung</string>
     <string name="about">ein grauer, warmer, dunkler Bildschirm für den Abend</string>
     <string name="w_on">an</string>
     <string name="w_off">aus</string>

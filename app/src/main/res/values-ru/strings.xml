@@ -27,7 +27,7 @@
     <string name="add_tile">добавить в быстрые настройки</string>
     <string name="add_tile_hint">переключатели, которые открываются свайпом сверху</string>
     <string name="add_tile_manual">Чтобы добавить переключатель в быстрые настройки: дважды проведите вниз от верхнего края экрана, нажмите на карандаш и перетащите «Ночной фильтр» к переключателям.</string>
-    <string name="widget_desc">ночной фильтр: включён или выключен</string>
+    <string name="widget_desc">ночной фильтр: переключатель и затемнение</string>
     <string name="about">серый, тёплый и приглушённый экран для вечера</string>
     <string name="w_on">вкл</string>
     <string name="w_off">выкл</string>

@@ -56,6 +56,8 @@
 
         <!-- the widget's switch -->
         <receiver android:name=".widget.ToggleReceiver" android:exported="false" />
+        <!-- the widget's dimming, one step per tap -->
+        <receiver android:name=".widget.DimReceiver" android:exported="false" />
 
         <!-- state and switch for Reader's Launcher; the caller is checked in the provider -->
         <provider

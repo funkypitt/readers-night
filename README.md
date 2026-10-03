@@ -12,6 +12,7 @@ off. The switch lives in the quick settings, in a home-screen widget and in the 
 * Three parts, each on or off: grayscale, warm tint (the warmest Night Light the phone accepts),
   dimming (light, medium, strong; Android 12 and later).
 * Three switches for the same filter: a quick-settings tile, a widget for any launcher, the app.
+  The widget also changes the dimming, one step per tap (off, light, medium, strong).
 * Switching off restores what was there before: your own Night Light strength and schedule,
   your colour correction.
 * Needs a permission given once from a computer, with one command the app shows and copies:

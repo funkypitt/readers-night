@@ -27,7 +27,7 @@
     <string name="add_tile">añadir a los ajustes rápidos</string>
     <string name="add_tile_hint">los interruptores que se bajan desde lo alto de la pantalla</string>
     <string name="add_tile_manual">Para añadir el interruptor a los ajustes rápidos: deslice dos veces desde lo alto de la pantalla, toque el lápiz y arrastre «Filtro nocturno» entre los interruptores.</string>
-    <string name="widget_desc">el filtro nocturno, activo o no</string>
+    <string name="widget_desc">el filtro nocturno: su interruptor y su atenuación</string>
     <string name="about">una pantalla gris, cálida y tenue para la noche</string>
     <string name="w_on">sí</string>
     <string name="w_off">no</string>

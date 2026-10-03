@@ -28,7 +28,7 @@
     <string name="add_tile">add to quick settings</string>
     <string name="add_tile_hint">the switches under a swipe down from the top of the screen</string>
     <string name="add_tile_manual">To add the switch to the quick settings: swipe down twice from the top of the screen, tap the pencil, and drag “Night filter” among the switches.</string>
-    <string name="widget_desc">the night filter, on or off</string>
+    <string name="widget_desc">the night filter: its switch and its dimming</string>
     <string name="about">a gray, warm and dim screen for the evening</string>
     <string name="w_on">on</string>
     <string name="w_off">off</string>

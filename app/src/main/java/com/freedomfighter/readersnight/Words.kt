@@ -11,3 +11,11 @@ fun summary(context: Context, o: Options): String {
         if (o.dim > 0) context.getString(R.string.part_dim) else null
     ).joinToString(" · ")
 }
+
+/** The dimming in one word: "off", "light", "medium" or "strong". */
+fun dimWord(context: Context, dim: Int): String = context.getString(when {
+    dim <= 0 -> R.string.off
+    dim <= Filter.DIM_LIGHT -> R.string.dim_light
+    dim <= Filter.DIM_MEDIUM -> R.string.dim_medium
+    else -> R.string.dim_strong
+})

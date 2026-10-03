@@ -9,14 +9,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.view.View
 import android.widget.RemoteViews
 import com.freedomfighter.readersnight.Filter
 import com.freedomfighter.readersnight.MainActivity
 import com.freedomfighter.readersnight.R
+import com.freedomfighter.readersnight.dimWord
 import com.freedomfighter.readersnight.summary
 
 /**
- * The home-screen widget: the state in words on the left, a switch on the right.
+ * The home-screen widget: the state in words on the left; on the right a switch and, under
+ * it, the dimming, which each tap moves one step (off, light, medium, strong).
  * Rendering only reads the state; every change of state calls [refresh].
  */
 object NightWidget {
@@ -51,6 +57,17 @@ object NightWidget {
         v.setOnClickPendingIntent(R.id.widget_body, open)
         // without the permission the switch can only lead to the setup page
         v.setOnClickPendingIntent(R.id.widget_switch, if (Filter.allowed(context)) PendingIntent.getBroadcast(context, 2, Intent(context, ToggleReceiver::class.java), flags) else open)
+        // the dimming: its name in the dim colour, its value in full, in a hairline frame
+        if (Filter.dimAvailable) {
+            val label = context.getString(R.string.dim)
+            val text = SpannableString(label + "  " + dimWord(context, Filter.options(context).dim))
+            text.setSpan(ForegroundColorSpan(dim), 0, label.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            v.setTextColor(R.id.widget_dim, fg)
+            v.setTextViewText(R.id.widget_dim, text)
+            v.setInt(R.id.widget_dim, "setBackgroundResource", if (fg == Color.WHITE) R.drawable.widget_frame_white else R.drawable.widget_frame_black)
+            v.setOnClickPendingIntent(R.id.widget_dim, if (Filter.allowed(context)) PendingIntent.getBroadcast(context, 3, Intent(context, DimReceiver::class.java), flags) else open)
+            v.setViewVisibility(R.id.widget_dim, View.VISIBLE)
+        } else v.setViewVisibility(R.id.widget_dim, View.GONE)
         mgr.updateAppWidget(id, v)
     }
 
@@ -68,6 +85,13 @@ class NightWidgetProvider : AppWidgetProvider() {
 class ToggleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Filter.toggle(context)
+        NightWidget.refresh(context)
+    }
+}
+
+class DimReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        Filter.cycleDim(context)
         NightWidget.refresh(context)
     }
 }

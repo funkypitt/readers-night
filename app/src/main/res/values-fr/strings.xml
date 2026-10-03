@@ -27,7 +27,7 @@
     <string name="add_tile">ajouter aux réglages rapides</string>
     <string name="add_tile_hint">les interrupteurs qu’on tire du haut de l’écran</string>
     <string name="add_tile_manual">Pour ajouter l’interrupteur aux réglages rapides : glissez deux fois depuis le haut de l’écran, touchez le crayon, puis faites glisser « Filtre de nuit » parmi les interrupteurs.</string>
-    <string name="widget_desc">le filtre de nuit, actif ou non</string>
+    <string name="widget_desc">le filtre de nuit : son interrupteur et son assombrissement</string>
     <string name="about">un écran gris, chaud et sombre pour le soir</string>
     <string name="w_on">actif</string>
     <string name="w_off">inactif</string>

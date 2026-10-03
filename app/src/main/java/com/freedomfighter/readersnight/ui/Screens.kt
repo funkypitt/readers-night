@@ -44,6 +44,7 @@ import com.freedomfighter.readersnight.NightTileService
 import com.freedomfighter.readersnight.R
 import com.freedomfighter.readersnight.data.FontChoice
 import com.freedomfighter.readersnight.data.TextSize
+import com.freedomfighter.readersnight.dimWord
 import com.freedomfighter.readersnight.summary
 import kotlinx.coroutines.delay
 
@@ -114,21 +115,11 @@ fun HomeScreen(nav: Nav, app: App) {
                     }
                     if (Filter.dimAvailable) ValueRow(
                         stringResource(R.string.dim),
-                        stringResource(when {
-                            o.dim <= 0 -> R.string.off
-                            o.dim <= Filter.DIM_LIGHT -> R.string.dim_light
-                            o.dim <= Filter.DIM_MEDIUM -> R.string.dim_medium
-                            else -> R.string.dim_strong
-                        }),
+                        dimWord(context, o.dim),
                         strong = o.dim > 0
                     ) {
                         tick()
-                        Filter.setOptions(context, o.copy(dim = when {
-                            o.dim <= 0 -> Filter.DIM_LIGHT
-                            o.dim <= Filter.DIM_LIGHT -> Filter.DIM_MEDIUM
-                            o.dim <= Filter.DIM_MEDIUM -> Filter.DIM_STRONG
-                            else -> 0
-                        }))
+                        Filter.setOptions(context, o.copy(dim = Filter.nextDim(o.dim)))
                     }
                     Rule(Modifier.padding(vertical = 8.dp))
                     Small(stringResource(R.string.limit_note), Modifier.padding(horizontal = rowPadH, vertical = 6.dp), maxLines = 8)

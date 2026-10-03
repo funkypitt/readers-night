@@ -27,7 +27,7 @@
     <string name="add_tile">adicionar às definições rápidas</string>
     <string name="add_tile_hint">os interruptores que se puxam do cimo do ecrã</string>
     <string name="add_tile_manual">Para adicionar o interruptor às definições rápidas: deslize duas vezes a partir do cimo do ecrã, toque no lápis e arraste «Filtro noturno» para junto dos interruptores.</string>
-    <string name="widget_desc">o filtro noturno, ativo ou não</string>
+    <string name="widget_desc">o filtro noturno: o interruptor e o escurecimento</string>
     <string name="about">um ecrã cinzento, quente e escuro para a noite</string>
     <string name="w_on">sim</string>
     <string name="w_off">não</string>
