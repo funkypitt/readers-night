@@ -11,13 +11,15 @@ import android.os.Bundle
 import android.os.Process
 
 /**
- * What Reader's Launcher needs for its tile: the state (`content://…/state`, one row) and the
- * switch (`call("toggle")`). Open to Reader's Launcher only, recognised by its signature.
+ * What Reader's Launcher needs for its tile: the state (`content://…/state`, one row), the
+ * switch (`call("toggle")`) and the dimming moved one step (`call("dim")`). Open to Reader's
+ * Launcher only, recognised by its signature.
  */
 class StateProvider : ContentProvider() {
     companion object {
         val STATE: Uri = Uri.parse("content://com.freedomfighter.readersnight/state")
         const val TOGGLE = "toggle"
+        const val DIM = "dim"
         private const val LAUNCHER = "com.freedomfighter.readerslauncher"
         // the launcher's release key, and the key of its first versions (still the one Android 12 and older see)
         private val KEYS = listOf(
@@ -40,8 +42,8 @@ class StateProvider : ContentProvider() {
         val ctx = context ?: return null
         if (!trusted()) throw SecurityException("not Reader's Launcher")
         val o = Filter.options(ctx)
-        return MatrixCursor(arrayOf("on", "allowed", "gray", "warm", "dim")).apply {
-            addRow(arrayOf<Any>(if (Filter.isOn(ctx)) 1 else 0, if (Filter.allowed(ctx)) 1 else 0, if (o.gray) 1 else 0, if (o.warm) 1 else 0, o.dim))
+        return MatrixCursor(arrayOf("on", "allowed", "gray", "warm", "dim", "can_dim")).apply {
+            addRow(arrayOf<Any>(if (Filter.isOn(ctx)) 1 else 0, if (Filter.allowed(ctx)) 1 else 0, if (o.gray) 1 else 0, if (o.warm) 1 else 0, o.dim, if (Filter.dimAvailable) 1 else 0))
             setNotificationUri(ctx.contentResolver, STATE)
         }
     }
@@ -49,11 +51,15 @@ class StateProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val ctx = context ?: return null
         if (!trusted()) throw SecurityException("not Reader's Launcher")
-        if (method != TOGGLE) return null
+        if (method != TOGGLE && method != DIM) return null
         val id = Binder.clearCallingIdentity()
         try {
-            val done = Filter.toggle(ctx)
-            return Bundle().apply { putBoolean("done", done); putBoolean("on", Filter.isOn(ctx)) }
+            val done = when {
+                method == TOGGLE -> Filter.toggle(ctx)
+                !Filter.allowed(ctx) || !Filter.dimAvailable -> false
+                else -> { Filter.cycleDim(ctx); true }
+            }
+            return Bundle().apply { putBoolean("done", done); putBoolean("on", Filter.isOn(ctx)); putInt("dim", Filter.options(ctx).dim) }
         } finally { Binder.restoreCallingIdentity(id) }
     }
 
