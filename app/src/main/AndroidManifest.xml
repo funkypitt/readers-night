@@ -4,6 +4,22 @@
 
     <!-- never granted at install: given once from a computer, `adb shell pm grant … WRITE_SECURE_SETTINGS` -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <!-- the fallback without it: a translucent layer over the apps, given on the phone -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- the schedule: exact alarms (granted by themselves), kept across reboots; sunset from the last known position -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- the phone's own pages the app offers to open when the full permission is missing -->
+    <queries>
+        <intent><action android:name="com.android.settings.ACCESSIBILITY_COLOR_SPACE_SETTINGS" /></intent>
+        <intent><action android:name="android.settings.NIGHT_DISPLAY_SETTINGS" /></intent>
+        <intent><action android:name="android.settings.REDUCE_BRIGHT_COLORS_SETTINGS" /></intent>
+    </queries>
 
     <application
         android:name=".App"
@@ -58,6 +74,25 @@
         <receiver android:name=".widget.ToggleReceiver" android:exported="false" />
         <!-- the widget's dimming, one step per tap -->
         <receiver android:name=".widget.DimReceiver" android:exported="false" />
+
+        <!-- the layer drawn over the apps when the full permission is missing -->
+        <service
+            android:name=".VeilService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="A translucent tint and dimming layer drawn over the screen while the user's night filter is on" />
+        </service>
+
+        <!-- the schedule's two alarms -->
+        <receiver android:name=".ScheduleReceiver" android:exported="false" />
+        <receiver android:name=".BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <!-- state and switch for Reader's Launcher; the caller is checked in the provider -->
         <provider

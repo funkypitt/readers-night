@@ -15,9 +15,14 @@ off. The switch lives in the quick settings, in a home-screen widget and in the 
   The widget also changes the dimming, one step per tap (off, light, medium, strong).
 * Switching off restores what was there before: your own Night Light strength and schedule,
   your colour correction.
-* Needs a permission given once from a computer, with one command the app shows and copies:
+* By itself: on at a chosen time or at sunset (from the phone's last known position, nothing
+  fetched), off at a chosen time.
+* The full filter needs a permission given once from a computer, with one command the app
+  shows and copies:
   `adb shell pm grant com.freedomfighter.readersnight android.permission.WRITE_SECURE_SETTINGS`.
-  No root.
+  No root. Without it, the app lays a translucent veil over the apps instead (warm tint and
+  dimming, no grayscale) and opens the phone's own pages for the rest; the grayscale is the
+  part that matters most, so the app says why.
 * The limit: Android does not let an app remove blue entirely. The tint stops at the phone's
   warmest Night Light; on a Pixel 10 that leaves about a fifth of the blue light and half of
   the green. A red-only screen needs root.

@@ -41,8 +41,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // the grayscale may have been switched off in the system settings meanwhile
+        // the grayscale may have been switched off in the system settings meanwhile,
+        // or the full permission may have arrived while the veil was on
         Filter.sync(this)
+        Schedule.arm(this)
     }
 
     override fun onPause() {

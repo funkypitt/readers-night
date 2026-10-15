@@ -23,6 +23,11 @@ data class Options(val gray: Boolean = true, val warm: Boolean = true, val dim: 
  * set to grayscale, Night Light at the warmest temperature the phone accepts, and extra dim.
  * Turning it on remembers what each setting was; turning it off puts every one back.
  * All of it needs WRITE_SECURE_SETTINGS, which only `adb shell pm grant` can give.
+ *
+ * Without that permission the filter falls back to a veil: a translucent layer drawn over
+ * every app by [VeilService] (the "draw over other apps" permission, given on the phone),
+ * which adds the warm tint and the dimming but cannot turn colours gray. The moment the
+ * full permission is there, [sync] drops the veil and drives the settings instead.
  */
 object Filter {
     const val DIM_LIGHT = 30
@@ -43,6 +48,7 @@ object Filter {
     private val DIM_KEYS = listOf(DIM_LEVEL, DIM_ON)
     private val ALL_KEYS = GRAY_KEYS + NIGHT_KEYS + DIM_KEYS
 
+    /** The system's extra dim exists from Android 12; the veil dims on every version. */
     val dimAvailable: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     private val _version = MutableStateFlow(0)
@@ -51,18 +57,33 @@ object Filter {
 
     private fun sp(context: Context): SharedPreferences = context.getSharedPreferences("filter", Context.MODE_PRIVATE)
 
+    /** The full filter: the permission given from a computer. */
     fun allowed(context: Context): Boolean =
         context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED
+
+    /** The veil: the "draw over other apps" permission, given on the phone. */
+    fun veilAllowed(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    /** True when the switch can do something, fully or as a veil. */
+    fun canAct(context: Context): Boolean = allowed(context) || veilAllowed(context)
+
+    /** True while the on state is held by the veil rather than by the settings. */
+    fun veiled(context: Context): Boolean = sp(context).getBoolean("veil", false)
 
     fun isOn(context: Context): Boolean = sp(context).getBoolean("on", false)
 
     fun options(context: Context): Options = sp(context).let {
-        Options(it.getBoolean("gray", true), it.getBoolean("warm", true), if (dimAvailable) it.getInt("dim", DIM_MEDIUM) else 0)
+        Options(it.getBoolean("gray", true), it.getBoolean("warm", true), it.getInt("dim", DIM_MEDIUM))
+    }
+
+    /** What is really applied: the veil has no grayscale; the settings have no dimming before Android 12. */
+    fun effective(context: Context): Options = options(context).let { o ->
+        if (!allowed(context)) o.copy(gray = false) else if (dimAvailable) o else o.copy(dim = 0)
     }
 
     fun setOptions(context: Context, o: Options) {
         sp(context).edit().putBoolean("gray", o.gray).putBoolean("warm", o.warm).putInt("dim", o.dim).apply()
-        if (isOn(context) && allowed(context)) write(context)
+        if (isOn(context)) apply(context)
         changed(context)
     }
 
@@ -80,39 +101,66 @@ object Filter {
         setOptions(context, o.copy(dim = nextDim(o.dim)))
     }
 
-    /** False when the permission is missing: the caller sends the user to the app. */
+    /** False when neither permission is there: the caller sends the user to the app. */
     fun toggle(context: Context): Boolean {
-        if (!allowed(context)) return false
-        if (isOn(context)) turnOff(context) else turnOn(context)
-        return true
+        if (!canAct(context)) return false
+        return if (isOn(context)) { turnOff(context); true } else turnOn(context)
     }
 
-    fun turnOn(context: Context) {
-        if (!allowed(context) || isOn(context)) return
-        val cr = context.contentResolver
-        val e = sp(context).edit()
-        ALL_KEYS.forEach { k ->
-            // Android hides some of these from apps (the extra-dim pair): written, never read
-            val v = runCatching { Settings.Secure.getString(cr, k) }
-            e.putBoolean("unknown_$k", v.isFailure)
-            val was = v.getOrNull()
-            if (was == null) e.remove("prev_$k") else e.putString("prev_$k", was)
+    /** False when nothing could be done (no permission at all). */
+    fun turnOn(context: Context): Boolean {
+        if (isOn(context)) return true
+        if (allowed(context)) {
+            val cr = context.contentResolver
+            val e = sp(context).edit()
+            ALL_KEYS.forEach { k ->
+                // Android hides some of these from apps (the extra-dim pair): written, never read
+                val v = runCatching { Settings.Secure.getString(cr, k) }
+                e.putBoolean("unknown_$k", v.isFailure)
+                val was = v.getOrNull()
+                if (was == null) e.remove("prev_$k") else e.putString("prev_$k", was)
+            }
+            e.putBoolean("on", true).putBoolean("veil", false).apply()
+            write(context)
+        } else {
+            if (!veilAllowed(context)) return false
+            sp(context).edit().putBoolean("on", true).putBoolean("veil", true).apply()
+            if (!VeilService.start(context)) { sp(context).edit().putBoolean("on", false).putBoolean("veil", false).apply(); return false }
         }
-        e.putBoolean("on", true).apply()
-        write(context)
         changed(context)
+        return true
     }
 
     fun turnOff(context: Context) {
         if (!isOn(context)) return
-        if (allowed(context)) write(context, on = false)
-        sp(context).edit().putBoolean("on", false).apply()
+        if (veiled(context)) VeilService.stop(context)
+        else if (allowed(context)) write(context, on = false)
+        sp(context).edit().putBoolean("on", false).putBoolean("veil", false).apply()
         changed(context)
     }
 
-    /** The grayscale switched off in the system settings while we were on: follow it. */
+    /** The options changed while on: the settings or the veil follow. */
+    private fun apply(context: Context) {
+        if (veiled(context)) VeilService.start(context)
+        else if (allowed(context)) write(context)
+    }
+
+    /**
+     * Two things to follow: the grayscale switched off in the system settings while we were
+     * on, and the full permission arriving while the veil was holding the filter (then the
+     * veil is dropped and the settings take over, so the screen turns gray without a tap).
+     */
     fun sync(context: Context) {
-        if (!isOn(context) || !allowed(context)) return
+        if (!isOn(context)) return
+        if (veiled(context)) {
+            if (allowed(context)) {
+                VeilService.stop(context)
+                sp(context).edit().putBoolean("on", false).putBoolean("veil", false).apply()
+                turnOn(context)
+            } else if (!veilAllowed(context)) turnOff(context)
+            return
+        }
+        if (!allowed(context)) return
         val o = options(context)
         val cr = context.contentResolver
         val undone = runCatching {
@@ -123,6 +171,14 @@ object Filter {
             }
         }.getOrDefault(false)
         if (undone) turnOff(context)
+    }
+
+    /** After a reboot the settings are still there, the veil is not: it is drawn again. */
+    fun restoreAfterBoot(context: Context) {
+        if (isOn(context) && veiled(context)) {
+            if (veilAllowed(context)) VeilService.start(context)
+            else sp(context).edit().putBoolean("on", false).putBoolean("veil", false).apply()
+        }
     }
 
     /**
@@ -188,7 +244,7 @@ object Filter {
         return if (id != 0) runCatching { r.getInteger(id) }.getOrDefault(1000) else 1000
     }
 
-    private fun changed(context: Context) {
+    fun changed(context: Context) {
         val ctx = context.applicationContext
         _version.value++
         NightWidget.refresh(ctx)

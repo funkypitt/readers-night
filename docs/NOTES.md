@@ -46,6 +46,43 @@ multiplies everything by about 0.39 in light.
 A red-only screen (`service call SurfaceFlinger 1015` with a matrix sending luminance to red) is
 refused to the shell ("Operation not permitted"): it needs root.
 
+## Without the permission: the veil (1.3.0)
+
+`VeilService` draws a translucent layer over every app (`TYPE_APPLICATION_OVERLAY`, the
+"draw over other apps" permission, which the user gives on the phone): a warm colour for the
+tint, black for the dimming, touches passed through. What Android imposes on such a layer:
+
+* **Opacity capped at 0.8** (`LayoutParams.alpha`): above it, touches through a non-touchable
+  overlay are blocked as "untrusted". The view's own colours carry the levels under that cap.
+* It never covers the status bar, the notification shade, the lock screen or the keyboard;
+  it is a window, so it cannot change colours: no grayscale this way.
+* A foreground service keeps it alive (`specialUse`, quiet notification on channel `veil`,
+  not shown without the notification permission, which the app never asks for).
+
+State: `on` + `veil` in the `filter` preferences. `Filter.sync()` (activity resume, tile
+listening, home polling) drops the veil the moment `WRITE_SECURE_SETTINGS` arrives and turns
+the real filter on; after a boot or an update `BootReceiver` draws it again. The home page
+in this mode explains the computer step (grayscale pitch), keeps the command, and offers the
+phone's own pages for what the full filter would switch (only those that resolve on the
+phone: Night Light is absent on the emulator, so is its row).
+
+`StateProvider`: `allowed` = the switch can act (full or veil), new column `full` = the
+computer step is done. Reader's Launcher 1.24 shows on/off as before and "one step left"
+only when neither permission is there.
+
+## The schedule (1.3.0)
+
+`Schedule`: on at a time or at sunset, off at a time (07:00 by default). Two exact alarms
+(`setExactAndAllowWhileIdle`, `USE_EXACT_ALARM` so no user step on Android 13+;
+`SCHEDULE_EXACT_ALARM` kept up to API 32), armed again after each firing, after a boot, an
+update, a clock or time-zone change, and at each activity resume. A tap in between is left
+alone: the schedule only acts at its two moments.
+
+Sunset: `Sun.sunsetMinutes` (Almanac for Computers 1990 formula, within 2 minutes of NOAA's
+spreadsheet in `SunTest`), from the phone's last known coarse position, kept in the
+preferences; `getCurrentLocation` once when none is kept. Without a position, or where the
+sun does not set, the chosen time is used and the page says so. Nothing fetched.
+
 ## Reader's Launcher
 
 `StateProvider` (`content://com.freedomfighter.readersnight/state`, columns `on`, `allowed`,

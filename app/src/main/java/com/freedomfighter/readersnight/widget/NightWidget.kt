@@ -43,9 +43,10 @@ object NightWidget {
         v.setTextColor(R.id.widget_title, fg)
         v.setTextColor(R.id.widget_sub, dim)
         v.setTextViewText(R.id.widget_title, context.getString(if (on) R.string.state_on else R.string.state_off))
+        val canAct = Filter.canAct(context)
         v.setTextViewText(R.id.widget_sub, when {
-            !Filter.allowed(context) -> context.getString(R.string.setup_title)
-            else -> summary(context, Filter.options(context))
+            !canAct -> context.getString(R.string.setup_title)
+            else -> summary(context, Filter.effective(context))
         })
         // the switch: filled while on, a hairline frame when not
         v.setTextViewText(R.id.widget_switch, context.getString(if (on) R.string.w_on else R.string.w_off))
@@ -56,16 +57,16 @@ object NightWidget {
         val open = PendingIntent.getActivity(context, 1, Intent(context, MainActivity::class.java).setAction(Intent.ACTION_MAIN).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), flags)
         v.setOnClickPendingIntent(R.id.widget_body, open)
         // without the permission the switch can only lead to the setup page
-        v.setOnClickPendingIntent(R.id.widget_switch, if (Filter.allowed(context)) PendingIntent.getBroadcast(context, 2, Intent(context, ToggleReceiver::class.java), flags) else open)
+        v.setOnClickPendingIntent(R.id.widget_switch, if (canAct) PendingIntent.getBroadcast(context, 2, Intent(context, ToggleReceiver::class.java), flags) else open)
         // the dimming: its name in the dim colour, its value in full, in a hairline frame
-        if (Filter.dimAvailable) {
+        if (Filter.dimAvailable || !Filter.allowed(context)) {
             val label = context.getString(R.string.dim)
             val text = SpannableString(label + "  " + dimWord(context, Filter.options(context).dim))
             text.setSpan(ForegroundColorSpan(dim), 0, label.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             v.setTextColor(R.id.widget_dim, fg)
             v.setTextViewText(R.id.widget_dim, text)
             v.setInt(R.id.widget_dim, "setBackgroundResource", if (fg == Color.WHITE) R.drawable.widget_frame_white else R.drawable.widget_frame_black)
-            v.setOnClickPendingIntent(R.id.widget_dim, if (Filter.allowed(context)) PendingIntent.getBroadcast(context, 3, Intent(context, DimReceiver::class.java), flags) else open)
+            v.setOnClickPendingIntent(R.id.widget_dim, if (canAct) PendingIntent.getBroadcast(context, 3, Intent(context, DimReceiver::class.java), flags) else open)
             v.setViewVisibility(R.id.widget_dim, View.VISIBLE)
         } else v.setViewVisibility(R.id.widget_dim, View.GONE)
         mgr.updateAppWidget(id, v)

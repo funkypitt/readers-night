@@ -14,6 +14,9 @@ import android.os.Process
  * What Reader's Launcher needs for its tile: the state (`content://…/state`, one row), the
  * switch (`call("toggle")`) and the dimming moved one step (`call("dim")`). Open to Reader's
  * Launcher only, recognised by its signature.
+ *
+ * `allowed` is 1 when the switch can act at all (the full permission, or the veil's); `full`
+ * is 1 for the full permission only. A launcher that knows only `allowed` keeps working.
  */
 class StateProvider : ContentProvider() {
     companion object {
@@ -42,8 +45,11 @@ class StateProvider : ContentProvider() {
         val ctx = context ?: return null
         if (!trusted()) throw SecurityException("not Reader's Launcher")
         val o = Filter.options(ctx)
-        return MatrixCursor(arrayOf("on", "allowed", "gray", "warm", "dim", "can_dim")).apply {
-            addRow(arrayOf<Any>(if (Filter.isOn(ctx)) 1 else 0, if (Filter.allowed(ctx)) 1 else 0, if (o.gray) 1 else 0, if (o.warm) 1 else 0, o.dim, if (Filter.dimAvailable) 1 else 0))
+        return MatrixCursor(arrayOf("on", "allowed", "gray", "warm", "dim", "can_dim", "full")).apply {
+            addRow(arrayOf<Any>(
+                if (Filter.isOn(ctx)) 1 else 0, if (Filter.canAct(ctx)) 1 else 0, if (o.gray) 1 else 0, if (o.warm) 1 else 0, o.dim,
+                if (Filter.dimAvailable || !Filter.allowed(ctx)) 1 else 0, if (Filter.allowed(ctx)) 1 else 0
+            ))
             setNotificationUri(ctx.contentResolver, STATE)
         }
     }
@@ -56,7 +62,7 @@ class StateProvider : ContentProvider() {
         try {
             val done = when {
                 method == TOGGLE -> Filter.toggle(ctx)
-                !Filter.allowed(ctx) || !Filter.dimAvailable -> false
+                !Filter.canAct(ctx) || (Filter.allowed(ctx) && !Filter.dimAvailable) -> false
                 else -> { Filter.cycleDim(ctx); true }
             }
             return Bundle().apply { putBoolean("done", done); putBoolean("on", Filter.isOn(ctx)); putInt("dim", Filter.options(ctx).dim) }
