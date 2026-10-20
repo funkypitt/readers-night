@@ -53,9 +53,11 @@ import com.freedomfighter.readersnight.NightTileService
 import com.freedomfighter.readersnight.R
 import com.freedomfighter.readersnight.Schedule
 import com.freedomfighter.readersnight.data.FontChoice
+import com.freedomfighter.readersnight.data.Palettes
 import com.freedomfighter.readersnight.data.TextSize
 import com.freedomfighter.readersnight.dimWord
 import com.freedomfighter.readersnight.summary
+import com.freedomfighter.readersnight.themeName
 import kotlinx.coroutines.delay
 
 sealed class Screen {
@@ -166,20 +168,20 @@ fun HomeScreen(nav: Nav, app: App) {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(stringResource(R.string.app_title), onBack = null, trailing = "⋯", onTrailing = { menu = true })
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                // ---- the state, inverted while on ----
+                // ---- the state, filled with the accent while on ----
                 Column(
-                    Modifier.fillMaxWidth().padding(top = 14.dp).background(if (on) colors.fg else colors.bg)
+                    Modifier.fillMaxWidth().padding(top = 14.dp).background(if (on) colors.accent else colors.bg)
                         .noRippleClickable { toggle() }
                         .padding(horizontal = rowPadH, vertical = 18.dp)
                 ) {
-                    T(stringResource(if (on) R.string.state_on else R.string.state_off), size = typo.tile * 1.3f, color = if (on) colors.bg else colors.fg, maxLines = 1)
+                    T(stringResource(if (on) R.string.state_on else R.string.state_off), size = typo.tile * 1.3f, color = if (on) colors.onAccent else colors.fg, maxLines = 1)
                     Small(
                         when {
                             on -> summary(context, eff)
                             !canAct -> stringResource(R.string.veil_ask)
                             else -> stringResource(R.string.detail_off)
                         },
-                        color = if (on) colors.bg.copy(alpha = 0.7f) else colors.dim, maxLines = 4
+                        color = if (on) colors.onAccent.copy(alpha = 0.7f) else colors.dim, maxLines = 4
                     )
                 }
                 // ---- what it does ----
@@ -251,7 +253,7 @@ fun HomeScreen(nav: Nav, app: App) {
         if (menu) TextMenu(null, buildList {
             if (canAct) add(MenuItem(actionLabel) { toggle() })
         }, onDismiss = { menu = false }, footer = listOf(
-            MenuItem(if (colors.isDark) stringResource(R.string.theme_light) else stringResource(R.string.theme_dark)) { app.prefs.toggleTheme(colors.isDark) },
+            MenuItem(themeName(context, Palettes.next(app.prefs.settings.value.theme))) { app.prefs.nextTheme() },
             MenuItem(stringResource(R.string.settings)) { nav.push(Screen.Settings) }
         ))
         when (ask) {
@@ -328,7 +330,6 @@ fun ValueRow(label: String, value: String, strong: Boolean, onClick: () -> Unit)
 fun SettingsScreen(nav: Nav, app: App) {
     val context = LocalContext.current
     val s by app.prefs.settings.collectAsState()
-    val colors = LocalColors.current
     val typo = LocalTypo.current
     BackHandler { nav.pop() }
     Page {
@@ -348,7 +349,7 @@ fun SettingsScreen(nav: Nav, app: App) {
                     Small(stringResource(R.string.add_tile_manual), Modifier.padding(horizontal = rowPadH, vertical = 10.dp), maxLines = 6)
                 }
                 Rule(Modifier.padding(vertical = 8.dp))
-                TextRow(if (colors.isDark) stringResource(R.string.theme_dark) else stringResource(R.string.theme_light), secondary = stringResource(R.string.colours)) { app.prefs.toggleTheme(colors.isDark) }
+                TextRow(themeName(context, s.theme), secondary = stringResource(R.string.colours)) { app.prefs.nextTheme() }
                 TextRow(when (s.textSize) { TextSize.SMALL -> stringResource(R.string.size_small); TextSize.MEDIUM -> stringResource(R.string.size_medium); TextSize.LARGE -> stringResource(R.string.size_large) }, secondary = stringResource(R.string.text_size)) {
                     app.prefs.setTextSize(when (s.textSize) { TextSize.SMALL -> TextSize.MEDIUM; TextSize.MEDIUM -> TextSize.LARGE; TextSize.LARGE -> TextSize.SMALL })
                 }

@@ -41,33 +41,46 @@
         android:layout_marginStart="12dp"
         android:orientation="vertical"
         android:gravity="end">
-        <TextView
-            android:id="@+id/widget_switch"
+        <!-- each frame is a 1 dp wrapper painted in the text colour: a hairline in any palette -->
+        <FrameLayout
+            android:id="@+id/widget_switch_frame"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:minWidth="64dp"
-            android:includeFontPadding="false"
-            android:gravity="center"
-            android:fontFamily="sans-serif-light"
-            android:textSize="22sp"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="8dp" />
-        <TextView
-            android:id="@+id/widget_dim"
+            android:padding="1dp">
+            <TextView
+                android:id="@+id/widget_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="62dp"
+                android:includeFontPadding="false"
+                android:gravity="center"
+                android:fontFamily="sans-serif-light"
+                android:textSize="22sp"
+                android:paddingStart="13dp"
+                android:paddingEnd="13dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="7dp" />
+        </FrameLayout>
+        <FrameLayout
+            android:id="@+id/widget_dim_frame"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:minWidth="64dp"
-            android:includeFontPadding="false"
-            android:gravity="center"
-            android:fontFamily="sans-serif-light"
-            android:textSize="15sp"
-            android:maxLines="1"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="7dp" />
+            android:padding="1dp">
+            <TextView
+                android:id="@+id/widget_dim"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="62dp"
+                android:includeFontPadding="false"
+                android:gravity="center"
+                android:fontFamily="sans-serif-light"
+                android:textSize="15sp"
+                android:maxLines="1"
+                android:paddingStart="11dp"
+                android:paddingEnd="11dp"
+                android:paddingTop="5dp"
+                android:paddingBottom="6dp" />
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>

@@ -17,6 +17,7 @@ import android.widget.RemoteViews
 import com.freedomfighter.readersnight.Filter
 import com.freedomfighter.readersnight.MainActivity
 import com.freedomfighter.readersnight.R
+import com.freedomfighter.readersnight.data.Palettes
 import com.freedomfighter.readersnight.dimWord
 import com.freedomfighter.readersnight.summary
 
@@ -26,19 +27,22 @@ import com.freedomfighter.readersnight.summary
  * Rendering only reads the state; every change of state calls [refresh].
  */
 object NightWidget {
-    /** (background, foreground, dim) following the app's theme setting. */
-    private fun colors(context: Context): Triple<Int, Int, Int> {
-        val theme = context.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("theme", "DARK")
+    /** The widget's colours, read from the app's theme setting. */
+    private class Colors(val bg: Int, val fg: Int, val dim: Int, val accent: Int, val onAccent: Int)
+
+    private fun colors(context: Context): Colors {
+        val theme = Palettes.parse(context.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("theme", null))
         val systemDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val dark = when (theme) { "LIGHT" -> false; "SYSTEM" -> systemDark; else -> true }
-        return if (dark) Triple(Color.BLACK, Color.WHITE, Color.argb(140, 255, 255, 255))
-        else Triple(Color.WHITE, Color.BLACK, Color.argb(140, 0, 0, 0))
+        val p = Palettes.of(theme, systemDark)
+        val fg = p.fg.toInt()
+        return Colors(p.bg.toInt(), fg, Color.argb(140, Color.red(fg), Color.green(fg), Color.blue(fg)), p.accent.toInt(), p.onAccent.toInt())
     }
 
     fun render(context: Context, mgr: AppWidgetManager, id: Int) {
         val on = Filter.isOn(context)
         val v = RemoteViews(context.packageName, R.layout.widget_night)
-        val (bg, fg, dim) = colors(context)
+        val c = colors(context)
+        val (bg, fg, dim) = Triple(c.bg, c.fg, c.dim)
         v.setInt(R.id.widget_root, "setBackgroundColor", bg)
         v.setTextColor(R.id.widget_title, fg)
         v.setTextColor(R.id.widget_sub, dim)
@@ -48,11 +52,12 @@ object NightWidget {
             !canAct -> context.getString(R.string.setup_title)
             else -> summary(context, Filter.effective(context))
         })
-        // the switch: filled while on, a hairline frame when not
+        // the switch: filled with the accent while on, a hairline frame in the text colour when
+        // not (the frame is the 1 dp wrapper painted in the text colour around the switch)
         v.setTextViewText(R.id.widget_switch, context.getString(if (on) R.string.w_on else R.string.w_off))
-        if (on) v.setInt(R.id.widget_switch, "setBackgroundColor", fg)
-        else v.setInt(R.id.widget_switch, "setBackgroundResource", if (fg == Color.WHITE) R.drawable.widget_frame_white else R.drawable.widget_frame_black)
-        v.setTextColor(R.id.widget_switch, if (on) bg else fg)
+        v.setInt(R.id.widget_switch_frame, "setBackgroundColor", if (on) c.accent else fg)
+        v.setInt(R.id.widget_switch, "setBackgroundColor", if (on) c.accent else bg)
+        v.setTextColor(R.id.widget_switch, if (on) c.onAccent else fg)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val open = PendingIntent.getActivity(context, 1, Intent(context, MainActivity::class.java).setAction(Intent.ACTION_MAIN).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), flags)
         v.setOnClickPendingIntent(R.id.widget_body, open)
@@ -65,10 +70,11 @@ object NightWidget {
             text.setSpan(ForegroundColorSpan(dim), 0, label.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             v.setTextColor(R.id.widget_dim, fg)
             v.setTextViewText(R.id.widget_dim, text)
-            v.setInt(R.id.widget_dim, "setBackgroundResource", if (fg == Color.WHITE) R.drawable.widget_frame_white else R.drawable.widget_frame_black)
+            v.setInt(R.id.widget_dim_frame, "setBackgroundColor", fg)
+            v.setInt(R.id.widget_dim, "setBackgroundColor", bg)
             v.setOnClickPendingIntent(R.id.widget_dim, if (canAct) PendingIntent.getBroadcast(context, 3, Intent(context, DimReceiver::class.java), flags) else open)
-            v.setViewVisibility(R.id.widget_dim, View.VISIBLE)
-        } else v.setViewVisibility(R.id.widget_dim, View.GONE)
+            v.setViewVisibility(R.id.widget_dim_frame, View.VISIBLE)
+        } else v.setViewVisibility(R.id.widget_dim_frame, View.GONE)
         mgr.updateAppWidget(id, v)
     }
 
