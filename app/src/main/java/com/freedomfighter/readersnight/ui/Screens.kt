@@ -18,6 +18,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import java.util.Calendar
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -168,11 +171,12 @@ fun HomeScreen(nav: Nav, app: App) {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(stringResource(R.string.app_title), onBack = null, trailing = "⋯", onTrailing = { menu = true })
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                // ---- the state, filled with the accent while on ----
+                // ---- the state, filled with the accent while on; with tiles, a card while off ----
                 Column(
-                    Modifier.fillMaxWidth().padding(top = 14.dp).background(if (on) colors.accent else colors.bg)
+                    Modifier.fillMaxWidth().padding(top = 14.dp)
+                        .then(if (colors.tiles) Modifier.tileCard(if (on) colors.accent else colors.tile) else Modifier.background(if (on) colors.accent else colors.bg))
                         .noRippleClickable { toggle() }
-                        .padding(horizontal = rowPadH, vertical = 18.dp)
+                        .padding(horizontal = if (colors.tiles) rowPadH - tileGap else rowPadH, vertical = 18.dp)
                 ) {
                     T(stringResource(if (on) R.string.state_on else R.string.state_off), size = typo.tile * 1.3f, color = if (on) colors.onAccent else colors.fg, maxLines = 1)
                     Small(
@@ -308,13 +312,18 @@ fun Setup(modifier: Modifier = Modifier) {
     }
 }
 
-/** A name on the left, its state on the right. */
+/** A name on the left, its state on the right; a card with tiles, the finger showing the press colour. */
 @Composable
 fun ValueRow(label: String, value: String, strong: Boolean, onClick: () -> Unit) {
     val colors = LocalColors.current
     val typo = LocalTypo.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     Row(
-        Modifier.fillMaxWidth().noRippleClickable(onClick = onClick).padding(horizontal = rowPadH, vertical = rowPadV * 0.45f),
+        Modifier.fillMaxWidth()
+            .tileCard(if (pressed) colors.press else colors.tile)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = if (colors.tiles) rowPadH - tileGap else rowPadH, vertical = rowPadV * 0.45f),
         verticalAlignment = Alignment.CenterVertically
     ) {
         T(label, Modifier.weight(1f), size = typo.title, maxLines = 1, align = TextAlign.Start)
